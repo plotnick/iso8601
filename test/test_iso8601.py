@@ -3,8 +3,8 @@
 from decimal import Decimal
 from unittest import *
 
-from iso8601 import *
-from iso8601 import TimeUnit, TimePoint,  Element, Separator, \
+from ..iso8601 import *
+from ..iso8601 import TimeUnit, TimePoint,  Element, Separator, \
     PrefixDesignator, FormatReprParser
 
 class TestFormatReprParser(TestCase):
