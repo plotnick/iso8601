@@ -423,7 +423,7 @@ class TestTimeInterval(RepresentationTestCase):
                           u"P1Y2M15DT12H30M0S/1985‐04‐12T23:20:50",
                           interval)
 
-class TestRucurringTimeInterval(RepresentationTestCase):
+class TestRecurringTimeInterval(RepresentationTestCase):
     """Section 4.5."""
 
     def test_complete(self):
@@ -536,7 +536,7 @@ def suite():
                                       TestLocalTimeAndUTC,
                                       TestDateTime,
                                       TestTimeInterval,
-                                      TestRucurringTimeInterval,
+                                      TestRecurringTimeInterval,
                                       TestStandardFormats)])
 
 def run(runner=TextTestRunner, **args):
