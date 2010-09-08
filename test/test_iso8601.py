@@ -364,7 +364,8 @@ class TestTimeInterval(RepresentationTestCase):
                                 Duration(1, 2, 15, 12, 30, Decimal("15.5"))),
                          u"P1Y2M15DT12H30M15,5S")
 
-        # c) Designators may be absent for zeros; we don't currently do this.
+        # c) Numbers and designators may be absent for zeros;
+        # see TestStandardFormats.test_duration.
 
         # d) The designator [T] shall be absent if all of the time
         # components are absent.
@@ -492,6 +493,14 @@ class TestStandardFormats(TestCase):
                           "1985-102T23:20:50")
         self.assertString(DateTime(WeekDate(1985, 15, 5), time),
                           "1985-W15-5T23:20:50")
+
+    def test_duration(self):
+        """Duration format with zero-elision"""
+        self.assertString(Duration(0, 2, 15, 12, 30, 0), "P2M15DT12H30M0S")
+        self.assertString(Duration(0, 0, 15, 12, 30, 0), "P15DT12H30M0S")
+        self.assertString(Duration(0, 0, 0, 12, 30, 0), "PT12H30M0S")
+        self.assertString(Duration(0, 0, 0, 0, 30, 0), "PT30M0S")
+        self.assertString(Duration(0, 0, 0, 0, 0, 0), "PT0S")
 
     def test_time_interval(self):
         """Time interval format"""

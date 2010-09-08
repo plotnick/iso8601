@@ -453,6 +453,31 @@ class Duration(TimeRep):
         else:
             return super(Duration, self).merge(other)
 
+    def __str__(self):
+        # 4.4.3.2 (c): "If the number of years, months, days, hours, minutes,
+        # or seconds in any of these expressions equals zero, the number and
+        # the corresponding designator may be absent; however, at least one
+        # number and its designator shall be present."
+        if not hasattr(self, "formatters"):
+            self.__class__.formatters = map(lambda x: ensure_class(x, Format),
+                                            [u"Pnn̲Ynn̲Mnn̲DTnn̲Hnn̲Mnn̲S",
+                                             u"Pnn̲Mnn̲DTnn̲Hnn̲Mnn̲S",
+                                             u"Pnn̲DTnn̲Hnn̲Mnn̲S",
+                                             u"PTnn̲Hnn̲Mnn̲S",
+                                             u"PTnn̲Mnn̲S",
+                                             u"PTnn̲S"])
+
+        # We need to transform leading 0s into Nones so that the formatter
+        # doesn't try to print them. We'll work with a copy so we don't
+        # change the original object.
+        d = self.copy()
+        for i in range(len(d.elements)):
+            if not d.elements[i].value:
+                d.elements[i].value = None
+            else:
+                return self.formatters[i].format(d)
+        return "PT0S"
+
 class TimeDuration(Duration):
     """The [M] designator in a duration representation is ambiguous: before [T]
     it means months, but after it means minutes. In order to disambiguate,
