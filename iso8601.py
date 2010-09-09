@@ -459,7 +459,7 @@ class Duration(TimeRep):
         # the corresponding designator may be absent; however, at least one
         # number and its designator shall be present."
         if not hasattr(self, "formatters"):
-            self.__class__.formatters = map(lambda x: ensure_class(x, Format),
+            self.__class__.formatters = map(Format,
                                             [u"Pnn̲Ynn̲Mnn̲DTnn̲Hnn̲Mnn̲S",
                                              u"Pnn̲Mnn̲DTnn̲Hnn̲Mnn̲S",
                                              u"Pnn̲DTnn̲Hnn̲Mnn̲S",
