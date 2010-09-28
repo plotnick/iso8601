@@ -7,7 +7,6 @@ dates and times, but the format representations as well."""
 
 from decimal import Decimal
 from functools import wraps
-from itertools import chain, repeat, izip as zip
 from operator import eq
 import re
 
