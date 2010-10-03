@@ -543,6 +543,10 @@ class TestStandardFormats(TestCase):
         self.assertString(Duration(0, 0, 0, 0, 30, 0), "PT30M0S")
         self.assertString(Duration(0, 0, 0, 0, 0, 0), "PT0S")
 
+    def test_weeks_duration(self):
+        """Weeks duration format"""
+        self.assertString(WeeksDuration(6), "P6W")
+
     def test_time_interval(self):
         """Time interval format"""
         april_4 = DateTime(CalendarDate(1985, 4, 12), Time(23, 20, 50))
