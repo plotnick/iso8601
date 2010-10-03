@@ -4,8 +4,21 @@ from decimal import Decimal
 from unittest import *
 
 from iso8601 import *
-from iso8601 import TimeUnit, TimePoint,  Element, Separator, \
+from iso8601 import TimeUnit, TimePoint, Element, Separator, \
     PrefixDesignator, FormatReprParser
+
+class TestMerge(TestCase):
+    def test_cardinal_merge(self):
+        """Merge cardinals to form durations"""
+        elements = [Years(1), Months(2), Days(15),
+                    Hours(12), Minutes(30), Seconds(15)]
+        for i in range(len(elements)):
+            for j in range(len(elements)):
+                if i != j:
+                    (start, end) = (i, j) if i < j else (j, i)
+                    p = [elements[k] if k == start or k == end else 0
+                         for k in range(0, end + 1)]
+                    self.assertEqual(elements[i] | elements[j], Duration(*p))
 
 class TestFormatReprParser(TestCase):
     class X(TimePoint):
@@ -534,7 +547,8 @@ class TestStandardFormats(TestCase):
 
 def suite():
     return TestSuite([TestLoader().loadTestsFromTestCase(cls) \
-                          for cls in (TestFormatReprParser,
+                          for cls in (TestMerge,
+                                      TestFormatReprParser,
                                       TestElementFormat,
                                       TestReducedAccuracy,
                                       TestCalendarDate,

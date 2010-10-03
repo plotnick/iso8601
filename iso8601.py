@@ -178,12 +178,13 @@ class Cardinal(TimeUnit):
     def __init__(self, value, signed=False):
         if value is not None and value < 0:
             raise ValueError("invalid cardinal %r" % value)
-        super(Cardinal, self).__init__(value, signed)
+        super(Cardinal, self).__init__(value, False, signed)
+
+    def merge(self, other):
+        return Duration() | self | other
 
 class Years(Cardinal, Year):
-    def merge(self, other):
-        if isinstance(other, Months):
-            return Duration(self, other)
+    pass
 
 class Months(Cardinal, Month):
     pass
@@ -195,9 +196,7 @@ class Days(Cardinal, Day):
     pass
 
 class Hours(Cardinal, Hour):
-    def merge(self, other):
-        if isinstance(other, Minutes):
-            return TimeDuration(self, other)
+    pass
 
 class Minutes(Cardinal, Minute):
     pass
@@ -206,7 +205,8 @@ class Seconds(Cardinal, Second):
     pass
 
 class Recurrences(Cardinal):
-    pass
+    def merge(self, other):
+        return RecurringTimeInterval(self, other)
 
 def ensure_class(obj, cls):
     """Ensure that obj is an instance of cls. If cls is None, skip the check."""
@@ -260,8 +260,8 @@ class TimeRep(object):
         return obj
 
     def merge(self, other):
+        merged = self.copy()
         if isinstance(other, type(self)):
-            merged = self.copy()
             for i, elt in enumerate(merged.elements):
                 merged.elements[i] = merged.elements[i] if elt \
                                                         else other.elements[i]
@@ -269,9 +269,10 @@ class TimeRep(object):
         else:
             for i, elt in enumerate(self.elements):
                 if isinstance(other, type(elt)):
-                    merged = self.copy()
                     merged.elements[i] = other
                     return merged
+                elif not(merged.elements[i]):
+                    merged.elements[i] = type(merged.elements[i])(0)
 
     def __or__(self, other):
         return self.merge(other) or NotImplemented
@@ -403,6 +404,10 @@ class Time(TimePoint):
     def merge(self, other):
         if isinstance(other, Hour) and other.signed:
             return Time(self.hour, self.minute, self.second, UTCOffset(other))
+        elif isinstance(other, UTCOffset):
+            # We need to handle this case specially so that we don't
+            # accidentally zero elided low-order components.
+            return Time(self.hour, self.minute, self.second, other)
         else:
             return super(Time, self).merge(other)
 
