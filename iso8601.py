@@ -190,7 +190,8 @@ class Months(Cardinal, Month):
     pass
 
 class Weeks(Cardinal, Week):
-    pass
+    def merge(self, other):
+        return None # weeks don't mix with other elements
 
 class Days(Cardinal, Day):
     pass
@@ -458,6 +459,10 @@ class Duration(TimeRep):
             return super(Duration, self).merge(other)
 
     def __str__(self):
+        if type(self) is not Duration:
+            # This method is only for Duration, not subclasses.
+            return super(Duration, self).__str__()
+
         # 4.4.3.2 (c): "If the number of years, months, days, hours, minutes,
         # or seconds in any of these expressions equals zero, the number and
         # the corresponding designator may be absent; however, at least one
