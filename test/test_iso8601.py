@@ -4,8 +4,36 @@ from decimal import Decimal
 from unittest import *
 
 from iso8601 import *
-from iso8601 import TimeUnit, TimePoint, Element, Separator, \
+from iso8601 import TimeUnit, Cardinal, TimePoint, Element, Separator, \
     PrefixDesignator, FormatReprParser
+
+class TestTimeUnit(TestCase):
+    def test_from_int(self):
+        """Time unit from int"""
+        self.assertEqual(TimeUnit(12), 12)
+
+    def test_from_string(self):
+        """Time unit from string"""
+        self.assertEqual(TimeUnit("12"), 12)
+
+    def test_from_decimal_string(self):
+        """Time unit from decimal string"""
+        time = TimeUnit("-3.14")
+        self.assertEqual(time.value, Decimal("-3.14"))
+        self.assertTrue(time.signed)
+
+    def test_ordinal_range(self):
+        """Test ordinal range"""
+        class SmallOrdinal(TimeUnit):
+            range = (0, 2)
+        self.assertEqual(SmallOrdinal(2), 2)
+        self.assertRaises(InvalidTimeUnit, lambda: SmallOrdinal(3))
+
+    def test_invalid_cardinal(self):
+        """Ensure cardinals are non-negative"""
+        self.assertEqual(Cardinal(1), 1)
+        self.assertEqual(Cardinal(0), 0)
+        self.assertRaises(ValueError, lambda: Cardinal(-1))
 
 class TestMerge(TestCase):
     def test_cardinal_merge(self):
@@ -547,7 +575,8 @@ class TestStandardFormats(TestCase):
 
 def suite():
     return TestSuite([TestLoader().loadTestsFromTestCase(cls) \
-                          for cls in (TestMerge,
+                          for cls in (TestTimeUnit,
+                                      TestMerge,
                                       TestFormatReprParser,
                                       TestElementFormat,
                                       TestReducedAccuracy,
