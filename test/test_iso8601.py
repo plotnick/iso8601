@@ -186,6 +186,15 @@ class TestCalendarDate(RepresentationTestCase):
         # d) A specific century
         self.assertFormat(u"±YYYY", u"+0019", Year(19)) # not actually a century
 
+class TestMonthDate(RepresentationTestCase):
+    """Extension: month/day dates."""
+
+    def test_complete(self):
+        "Month date"
+        date = MonthDate(4, 12)
+        self.assertFormat(u"MMDD", u"0412", date) # basic
+        self.assertFormat(u"MM-DD", u"04-12", date) # extended
+
 class TestOrdinalDate(RepresentationTestCase):
     """Section 4.1.3."""
 
@@ -710,6 +719,7 @@ def suite():
                                       TestElementFormat,
                                       TestReducedAccuracy,
                                       TestCalendarDate,
+                                      TestMonthDate,
                                       TestOrdinalDate,
                                       TestWeekDate,
                                       TestLocalTime,
