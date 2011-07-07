@@ -210,6 +210,15 @@ class TestOrdinalDate(RepresentationTestCase):
         self.assertFormat(u"±YYYYYYDDD", u"+001985102", date) # basic
         self.assertFormat(u"±YYYYYY‐DDD", u"+001985‐102", date) # extended
 
+class TestQuarterDate(RepresentationTestCase):
+    """Extension: quarter dates."""
+
+    def test_complete(self):
+        """Quarter date"""
+        date = QuarterDate(1985, 2)
+        self.assertFormat(u"YYYYQq", u"1985Q2", date) # basic
+        self.assertFormat(u"YYYY‐Qq", u"1985‐Q2", date) # extended
+
 class TestWeekDate(RepresentationTestCase):
     """Section 4.1.4."""
 
@@ -721,6 +730,7 @@ def suite():
                                       TestCalendarDate,
                                       TestMonthDate,
                                       TestOrdinalDate,
+                                      TestQuarterDate,
                                       TestWeekDate,
                                       TestLocalTime,
                                       TestUTC,

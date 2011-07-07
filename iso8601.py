@@ -13,12 +13,13 @@ import re
 from slotmerger import SlotMerger
 
 __all__ = ["InvalidTimeUnit",
-           "Year", "Month", "Week",
+           "Year", "Month", "Week", "Quarter",
            "Day", "DayOfYear", "DayOfMonth", "DayOfWeek",
            "Hour", "Minute", "Second",
-           "Years", "Months", "Weeks", "Days",
+           "Years", "Months", "Weeks", "Days", "Quarters",
            "Hours", "Minutes", "Seconds", "Recurrences",
-           "Date", "CalendarDate", "MonthDate", "OrdinalDate", "WeekDate",
+           "Date", "CalendarDate", "MonthDate",
+           "OrdinalDate", "QuarterDate", "WeekDate",
            "UTCOffset", "UTC", "utc", "Time", "DateTime",
            "Duration", "WeeksDuration",
            "TimeInterval", "RecurringTimeInterval",
@@ -147,10 +148,15 @@ class Year(TimeUnit):
     def merge(self, other):
         if isinstance(other, Month):
             return CalendarDate(self, other)
+        elif isinstance(other, Quarter):
+            return QuarterDate(self, other)
         elif isinstance(other, Week):
             return WeekDate(self, other)
         elif isinstance(other, Day):
             return OrdinalDate(self, other)
+
+class Quarter(TimeUnit):
+    range = (1, 4)
 
 class Month(TimeUnit):
     range = (1, 12)
@@ -211,6 +217,9 @@ class Years(Cardinal, Year):
     pass
 
 class Months(Cardinal, Month):
+    pass
+
+class Quarters(Cardinal, Quarter):
     pass
 
 class Weeks(Cardinal, Week):
@@ -341,8 +350,8 @@ class TimePoint(TimeRep):
     pass
 
 class Date(TimePoint):
-    digits = {"Y": Year, "M": Month, "D": Day, "w": Week}
-    designators = {"W": None} # for week date
+    digits = {"Y": Year, "M": Month, "D": Day, "w": Week, "q": Quarter}
+    designators = {"W": None, "Q": None} # for week & quarter dates, resp.
     separators = {u"-": False, # hyphen-minus (a.k.a. ASCII hyphen, U+002D)
                   u"‐": False} # hyphen (U+2010)
 
@@ -354,6 +363,8 @@ class Date(TimePoint):
                 return super(Date, OrdinalDate).__new__(OrdinalDate)
             elif any(isinstance(arg, Week) for arg in args):
                 return super(Date, WeekDate).__new__(WeekDate)
+            elif any(isinstance(arg, Quarter) for arg in args):
+                return super(Date, QuarterDate).__new__(QuarterDate)
             else:
                 return super(Date, CalendarDate).__new__(CalendarDate)
         else:
@@ -446,6 +457,14 @@ class OrdinalDate(Date):
     stdformat = "YYYY-DDD"
 
     @units(Year, Day)
+    def __init__(self, *args):
+        TimeRep.__init__(self, args)
+
+class QuarterDate(Date):
+    digits = {"Y": Year, "q": Quarter}
+    stdformat = "YYYY-Qq"
+
+    @units(Year, Quarter)
     def __init__(self, *args):
         TimeRep.__init__(self, args)
 
