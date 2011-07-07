@@ -18,7 +18,7 @@ __all__ = ["InvalidTimeUnit",
            "Hour", "Minute", "Second",
            "Years", "Months", "Weeks", "Days",
            "Hours", "Minutes", "Seconds", "Recurrences",
-           "Date", "CalendarDate", "OrdinalDate", "WeekDate",
+           "Date", "CalendarDate", "MonthDate", "OrdinalDate", "WeekDate",
            "UTCOffset", "UTC", "utc", "Time", "DateTime",
            "Duration", "WeeksDuration",
            "TimeInterval", "RecurringTimeInterval",
@@ -154,6 +154,10 @@ class Year(TimeUnit):
 
 class Month(TimeUnit):
     range = (1, 12)
+
+    def merge(self, other):
+        if isinstance(other, Day):
+            return MonthDate(self, other)
 
 class Week(TimeUnit):
     range = (1, 53)
@@ -428,6 +432,14 @@ class CalendarDate(Date):
         else:
             return CalendarDate(year, month)
         return CalendarDate(year, month, day)
+
+class MonthDate(Date):
+    digits = {"M": Month, "D": DayOfMonth}
+    stdformat = "MM-DD"
+
+    @units(Month, Day)
+    def __init__(self, *args):
+        TimeRep.__init__(self, args)
 
 class OrdinalDate(Date):
     digits = {"Y": Year, "D": DayOfYear}
