@@ -75,7 +75,7 @@ class TimeUnit(object):
         return self.merge(other) or NotImplemented
 
     def __int__(self):
-        return self.value
+        return self.value or 0
 
     def __nonzero__(self):
         return self.value is not None
@@ -182,6 +182,12 @@ class Cardinal(TimeUnit):
 
     def merge(self, other):
         return Duration() | self | other
+
+    def __add__(self, other):
+        if isinstance(other, type(self)):
+            return type(self)(self.value + other.value)
+        else:
+            return self | other
 
 class Years(Cardinal, Year):
     pass
@@ -458,6 +464,17 @@ class Duration(TimeRep):
         else:
             return super(Duration, self).merge(other)
 
+    def __add__(self, other):
+        if isinstance(other, type(self)):
+            return type(self)(*[int(a) + int(b) if a or b else None
+                                for a, b in zip(self.elements, other.elements)])
+        elif isinstance(other, (Years, Months, Days, Hours, Minutes, Seconds)):
+            return Duration(*[int(e) + int(other) \
+                                  if type(e) is type(other) else e
+                              for e in self.elements])
+        else:
+            return NotImplemented
+
     def __str__(self):
         if type(self) is not Duration:
             # This method is only for Duration, not subclasses.
@@ -511,6 +528,14 @@ class WeeksDuration(Duration):
     @units(Weeks)
     def __init__(self, weeks=None):
         TimeRep.__init__(self, (weeks,))
+
+    def __add__(self, other):
+        if isinstance(other, Weeks):
+            return WeeksDuration(self.weeks + other)
+        elif isinstance(other, Cardinal):
+            return NotImplemented
+        else:
+            return super(WeeksDuration, self).__add__(other)
 
 class TimeInterval(DateTime):
     designators = {"P": Duration}

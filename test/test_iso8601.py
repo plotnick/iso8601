@@ -4,8 +4,8 @@ from decimal import Decimal
 from unittest import *
 
 from iso8601 import *
-from iso8601 import TimeUnit, Cardinal, TimePoint, Element, Separator, \
-    PrefixDesignator, FormatReprParser
+from iso8601 import TimeUnit, Cardinal, TimePoint, TimeDuration, \
+    Element, Separator, PrefixDesignator, FormatReprParser
 
 class TestTimeUnit(TestCase):
     def test_from_int(self):
@@ -21,6 +21,12 @@ class TestTimeUnit(TestCase):
         time = TimeUnit("-3.14")
         self.assertEqual(time.value, Decimal("-3.14"))
         self.assertTrue(time.signed)
+
+    def test_to_int(self):
+        """Time unit to int"""
+        self.assertEqual(int(TimeUnit(12)), 12)
+        self.assertEqual(int(TimeUnit(0)), 0)
+        self.assertEqual(int(TimeUnit(None)), 0)
 
     def test_ordinal_range(self):
         """Test ordinal range"""
@@ -577,6 +583,34 @@ class TestStandardFormats(TestCase):
         self.assertString(RecurringTimeInterval(12, april_4, june_25),
                           "R12/1985-04-12T23:20:50/1985-06-25T10:30:00")
 
+class TestCalendarCalculations(TestCase):
+    def test_cardinal_arithmetic(self):
+        """Cardinal arithmetic"""
+        self.assertEqual(Hours(1) + Hours(2), Hours(3))
+        self.assertEqual(Hours(5) - Hours(2), Hours(3))
+        self.assertEqual(Hours(1) + Minutes(30), TimeDuration(1, 30))
+
+    def test_duration_arithmetic(self):
+        """Duration arithmetic"""
+        self.assertEqual(Hours(1) + Minutes(30) + Seconds(45),
+                         TimeDuration(1, 30, 45))
+        self.assertEqual(Duration(5, 0, 4, 6) +
+                         Duration(0, 6, 3, 2, 12),
+                         Duration(5, 6, 7, 8, 12))
+
+    def test_weeks_duration_arithmetic(self):
+        """Weeks duration arithmetic"""
+        self.assertEqual(WeeksDuration(4) + WeeksDuration(2),
+                         WeeksDuration(6))
+        self.assertEqual(WeeksDuration(4) + Weeks(2),
+                         WeeksDuration(6))
+        self.assertRaises(TypeError, lambda: WeeksDuration(4) + Days(3))
+
+    def test_duration_arithmetic_format(self):
+        """Duration arithmetic formatting"""
+        self.assertEqual(str(Duration(0, 0, 4, 6) + Duration(0, 6, 8, 1, 12)),
+                         "P6M12DT7H12M")
+
 def suite():
     return TestSuite([TestLoader().loadTestsFromTestCase(cls) \
                           for cls in (TestTimeUnit,
@@ -593,7 +627,8 @@ def suite():
                                       TestDateTime,
                                       TestTimeInterval,
                                       TestRecurringTimeInterval,
-                                      TestStandardFormats)])
+                                      TestStandardFormats,
+                                      TestCalendarCalculations)])
 
 def run(runner=TextTestRunner, **args):
     return runner(**args).run(suite())
