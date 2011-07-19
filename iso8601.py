@@ -494,6 +494,13 @@ class TimeDuration(Duration):
 
     designators = {"H": Hours, "M": Minutes, "S": Seconds}
 
+    @units(Hours, Minutes, Seconds)
+    def __new__(self, *args):
+        """We don't allow the creation of TimeDuration instances as such.
+        But as a convenience, we'll silently create equivalent Duration
+        instances by supplying the date components."""
+        return Duration(*((Years(0), Months(0), Days(0)) + args))
+
 # We can't do this assignment in Duration, above, because the class doesn't
 # exist at that time.
 Duration.designators["T"] = TimeDuration
