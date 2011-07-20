@@ -68,6 +68,15 @@ class TimeUnit(object):
         else:
             return True
 
+    def decimal(self):
+        """Return the value as either an integer or a Decimal."""
+        if self.value is None:
+            return 0
+        elif isinstance(self.value, (int, Decimal)):
+            return self.value
+        else:
+            raise TypeError
+
     def merge(self, other):
         return self or other
 
@@ -75,7 +84,7 @@ class TimeUnit(object):
         return self.merge(other) or NotImplemented
 
     def __int__(self):
-        return self.value or 0
+        return int(self.decimal())
 
     def __nonzero__(self):
         return self.value is not None
@@ -466,10 +475,10 @@ class Duration(TimeRep):
 
     def __add__(self, other):
         if isinstance(other, type(self)):
-            return type(self)(*[int(a) + int(b) if a or b else None
+            return type(self)(*[a.decimal() + b.decimal() if a or b else None
                                 for a, b in zip(self.elements, other.elements)])
         elif isinstance(other, (Years, Months, Days, Hours, Minutes, Seconds)):
-            return Duration(*[int(e) + int(other) \
+            return Duration(*[e.decimal() + other.decimal() \
                                   if type(e) is type(other) else e
                               for e in self.elements])
         else:
