@@ -4,8 +4,10 @@ from decimal import Decimal
 from unittest import *
 
 from iso8601 import *
-from iso8601 import TimeUnit, Cardinal, TimePoint, TimeDuration, \
-    Element, Separator, PrefixDesignator, FormatReprParser
+from iso8601 import TimeUnitOverflow, TimeUnit, Cardinal, \
+    TimePoint, TimeDuration, \
+    Element, Separator, PrefixDesignator, FormatReprParser, \
+    leap_year, days_in_month
 
 class TestTimeUnit(TestCase):
     def test_from_int(self):
@@ -583,6 +585,25 @@ class TestStandardFormats(TestCase):
         self.assertString(RecurringTimeInterval(12, april_4, june_25),
                           "R12/1985-04-12T23:20:50/1985-06-25T10:30:00")
 
+class TestCalendarUtils(TestCase):
+    def test_leap_year(self):
+        """Leap year calculations"""
+        # This may seem silly, but it's amazing how many broken leap year
+        # implementations there are out there. Let's not be one of them.
+        self.assertFalse(leap_year(1900))
+        self.assertTrue(leap_year(2000))
+        self.assertFalse(leap_year(2001))
+        self.assertTrue(leap_year(2004))
+
+    def test_days_in_month(self):
+        """Days in month"""
+        self.assertRaises(IndexError, lambda: days_in_month(2000, 0))
+        self.assertRaises(IndexError, lambda: days_in_month(2000, 13))
+        self.assertEqual(days_in_month(2000, 1), 31)
+        self.assertEqual(days_in_month(2000, 2), 29)
+        self.assertEqual(days_in_month(2001, 2), 28)
+        self.assertEqual(days_in_month(2000, 12), 31)
+
 class TestCalendarCalculations(TestCase):
     def test_cardinal_arithmetic(self):
         """Cardinal arithmetic"""
@@ -611,6 +632,43 @@ class TestCalendarCalculations(TestCase):
         self.assertEqual(str(Duration(0, 0, 4, 6) + Duration(0, 6, 8, 1, 12)),
                          "P6M12DT7H12M")
 
+    def test_time_plus_duration(self):
+        """Time plus duration"""
+        self.assertEqual(Time(23, 20) + TimeDuration(0, 5),
+                         Time(23, 25))
+        self.assertEqual(Time(23, 20, 50) + TimeDuration(0, 5, 15),
+                         Time(23, 26, 5))
+        self.assertRaises(TimeUnitOverflow,
+                          lambda: Time(23, 20, 50) + TimeDuration(0, 39, 10))
+
+    def test_calendar_date_plus_duration(self):
+        """Calendar date plus duration"""
+        self.assertEqual(Date(1984) + Duration(1),
+                         Date(1985))
+        self.assertEqual(Date(1984) + Duration(1, 4),
+                         Date(1985, 4))
+        self.assertEqual(Date(1984, 1, 31) + Duration(0, 1),
+                         Date(1984, 2, 29))
+        self.assertEqual(Date(1983, 1, 29) + Duration(1, 1),
+                         Date(1984, 2, 29))
+        self.assertEqual(Date(1983, 1, 29) + Duration(0, 1, 1),
+                         Date(1983, 3, 1))
+        self.assertEqual(Date(1982, 1, 29) + Duration(1, 13),
+                         Date(1984, 2, 29))
+        self.assertEqual(Date(1983, 1, 31) + Duration(0, 0, 29),
+                         Date(1983, 3, 1))
+        self.assertEqual(Date(1983, 12, 31) + Duration(0, 1, 30),
+                         Date(1984, 3, 1))
+
+    def test_datetime_plus_duration(self):
+        """Datetime plus duration"""
+        self.assertEqual(DateTime(CalendarDate(1985, 4, 12)) +
+                         Duration(1, 1, 3, 23, 20, 50),
+                         DateTime(CalendarDate(1986, 5, 15), Time(23, 20, 50)))
+        self.assertEqual(DateTime(CalendarDate(1983, 1, 31), Time(23, 30)) +
+                         Duration(1, 1, 3, 25, 31),
+                         DateTime(CalendarDate(1984, 3, 5), Time(1, 1)))
+
 def suite():
     return TestSuite([TestLoader().loadTestsFromTestCase(cls) \
                           for cls in (TestTimeUnit,
@@ -628,6 +686,7 @@ def suite():
                                       TestTimeInterval,
                                       TestRecurringTimeInterval,
                                       TestStandardFormats,
+                                      TestCalendarUtils,
                                       TestCalendarCalculations)])
 
 def run(runner=TextTestRunner, **args):

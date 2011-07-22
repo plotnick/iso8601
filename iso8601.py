@@ -32,6 +32,11 @@ class InvalidTimeUnit(Exception):
     def __str__(self):
         return "invalid %s %r" % (type(self.unit).__name__.lower(), self.value)
 
+class TimeUnitOverflow(OverflowError):
+    def __init__(self, value, carry):
+        self.value = value
+        self.carry = carry
+
 class TimeUnit(object):
     """A unit of time."""
 
@@ -357,6 +362,25 @@ class Date(TimePoint):
         else:
             return super(Date, self).merge(other)
 
+def leap_year(year):
+    """Determine if year is a leap year, assuming the proleptic Gregorian
+    calendar."""
+    return (year % 400 == 0) or (year % 4 == 0 and year % 100 != 0)
+
+def days_in_month(year, month,
+                  days=((31, 28, 31, 30, 31, 30, 30, 31, 30, 31, 30, 31),
+                        (31, 29, 31, 30, 31, 30, 30, 31, 30, 31, 30, 31))):
+    """Return the number of days in the given month, assuming the proleptic
+    Gregorian calendar. Months are numbered starting with 1."""
+    if not 1 <= month <= 12:
+        raise IndexError("invalid month %d" % month)
+    return days[leap_year(year)][month-1]
+
+def divmod_1(a, b):
+    """Like divmod, but for 1-indexed values (e.g., month and day numbers)."""
+    q, r = divmod(a-1, b)
+    return q, r+1
+
 class CalendarDate(Date):
     digits = {"Y": Year, "M": Month, "D": DayOfMonth}
     stdformat = "YYYY-MM-DD"
@@ -364,6 +388,31 @@ class CalendarDate(Date):
     @units(Year, Month, Day)
     def __init__(self, *args):
         TimeRep.__init__(self, args)
+
+    def __add__(self, other):
+        if not isinstance(other, Duration):
+            return NotImplemented
+        year = int(self.year) + int(other.years)
+        if self.month or other.months:
+            carry, month = divmod_1(int(self.month) + int(other.months), 12)
+            year += carry
+        else:
+            month = None
+        if self.day or other.days:
+            # Before we add in the days, we clip to the number of days in the
+            # month & year calculated so far.
+            day = min(int(self.day), days_in_month(year, month))
+
+            # Now add in the days. We can't just use divmod here, since the
+            # number of days/month varies with month.
+            day += int(other.days)
+            while day > days_in_month(year, month):
+                day -= days_in_month(year, month)
+                carry, month = divmod_1(month + 1, 12)
+                year += carry
+        else:
+            day = None
+        return CalendarDate(year, month, day)
 
 class OrdinalDate(Date):
     digits = {"Y": Year, "D": DayOfYear}
@@ -427,6 +476,26 @@ class Time(TimePoint):
         else:
             return super(Time, self).merge(other)
 
+    def __add__(self, other):
+        if not isinstance(other, Duration):
+            return NotImplemented
+        elements = []
+        carry = 0
+        for x, y, m in zip((self.second, self.minute, self.hour),
+                           (other.seconds, other.minutes, other.hours),
+                           (60, 60, 24)):
+            assert isinstance(y, type(x)), "type mismatch"
+            if x or y:
+                carry, z = divmod(x.decimal() + y.decimal() + carry, m)
+            else:
+                carry, z = 0, None
+            elements.append(z)
+        elements.reverse()
+        sum = Time(*(elements + [self.utcoffset]))
+        if carry:
+            raise TimeUnitOverflow(sum, carry)
+        return sum
+
     def __str__(self):
         return (super(Time, self).__str__() +
                 str(self.utcoffset) if self.utcoffset else "")
@@ -448,6 +517,20 @@ class DateTime(Date, Time):
             return TimeInterval(self, other)
         else:
             return super(DateTime, self).merge(other)
+
+    def __add__(self, other):
+        if not isinstance(other, Duration):
+            return NotImplemented
+        if self.time:
+            try:
+                time = self.time + other
+            except TimeUnitOverflow as overflow:
+                time = overflow.value
+                other += Days(overflow.carry)
+        else:
+            time = None
+        date = self.date + other
+        return DateTime(date, time)
 
     def __str__(self):
         return "T".join(map(str, self.elements))
