@@ -485,7 +485,7 @@ class Time(TimePoint):
                            (other.seconds, other.minutes, other.hours),
                            (60, 60, 24)):
             assert isinstance(y, type(x)), "type mismatch"
-            if x or y:
+            if x:
                 carry, z = divmod(x.decimal() + y.decimal() + carry, m)
             else:
                 carry, z = 0, None

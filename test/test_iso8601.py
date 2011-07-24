@@ -636,6 +636,8 @@ class TestCalendarCalculations(TestCase):
         """Time plus duration"""
         self.assertEqual(Time(23, 20) + TimeDuration(0, 5),
                          Time(23, 25))
+        self.assertEqual(Time(23, 20) + TimeDuration(0, 5, 15),
+                         Time(23, 25))
         self.assertEqual(Time(23, 20, 50) + TimeDuration(0, 5, 15),
                          Time(23, 26, 5))
         self.assertRaises(TimeUnitOverflow,
@@ -666,9 +668,6 @@ class TestCalendarCalculations(TestCase):
 
     def test_datetime_plus_duration(self):
         """Datetime plus duration"""
-        self.assertEqual(DateTime(CalendarDate(1985, 4, 12)) +
-                         Duration(1, 1, 3, 23, 20, 50),
-                         DateTime(CalendarDate(1986, 5, 15), Time(23, 20, 50)))
         self.assertEqual(DateTime(CalendarDate(1983, 1, 31), Time(23, 30)) +
                          Duration(1, 1, 3, 25, 31),
                          DateTime(CalendarDate(1984, 3, 5), Time(1, 1)))
