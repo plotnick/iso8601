@@ -393,12 +393,12 @@ class CalendarDate(Date):
         if not isinstance(other, Duration):
             return NotImplemented
         year = int(self.year) + int(other.years)
-        if self.month or other.months:
+        if self.month:
             carry, month = divmod_1(int(self.month) + int(other.months), 12)
             year += carry
         else:
-            month = None
-        if self.day or other.days:
+            return CalendarDate(year)
+        if self.day:
             # Before we add in the days, we clip to the number of days in the
             # month & year calculated so far.
             day = min(int(self.day), days_in_month(year, month))
@@ -411,7 +411,7 @@ class CalendarDate(Date):
                 carry, month = divmod_1(month + 1, 12)
                 year += carry
         else:
-            day = None
+            return CalendarDate(year, month)
         return CalendarDate(year, month, day)
 
 class OrdinalDate(Date):

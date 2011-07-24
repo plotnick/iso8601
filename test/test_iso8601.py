@@ -643,10 +643,14 @@ class TestCalendarCalculations(TestCase):
 
     def test_calendar_date_plus_duration(self):
         """Calendar date plus duration"""
+        self.assertEqual(Date(1984) + Duration(0),
+                         Date(1984))
+        self.assertEqual(Date(1984) + Duration(0, 0, 0, 0, 0, 0),
+                         Date(1984))
         self.assertEqual(Date(1984) + Duration(1),
                          Date(1985))
         self.assertEqual(Date(1984) + Duration(1, 4),
-                         Date(1985, 4))
+                         Date(1985))
         self.assertEqual(Date(1984, 1, 31) + Duration(0, 1),
                          Date(1984, 2, 29))
         self.assertEqual(Date(1983, 1, 29) + Duration(1, 1),
