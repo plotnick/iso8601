@@ -7,7 +7,7 @@ dates and times, but the format representations as well."""
 
 from decimal import Decimal
 from functools import wraps
-from operator import eq
+from operator import eq, add, sub
 import re
 
 from slotmerger import SlotMerger
@@ -390,11 +390,18 @@ class CalendarDate(Date):
         TimeRep.__init__(self, args)
 
     def __add__(self, other):
+        return self.add_sub(other, add)
+
+    def __sub__(self, other):
+        return self.add_sub(other, sub)
+
+    def add_sub(self, other, op):
+        """Common subroutine for addition and subtraction."""
         if not isinstance(other, Duration):
             return NotImplemented
-        year = int(self.year) + int(other.years)
+        year = op(int(self.year), int(other.years))
         if self.month:
-            carry, month = divmod_1(int(self.month) + int(other.months), 12)
+            carry, month = divmod_1(op(int(self.month), int(other.months)), 12)
             year += carry
         else:
             return CalendarDate(year)
@@ -403,12 +410,20 @@ class CalendarDate(Date):
             # month & year calculated so far.
             day = min(int(self.day), days_in_month(year, month))
 
-            # Now add in the days. We can't just use divmod here, since the
-            # number of days/month varies with month.
-            day += int(other.days)
-            while day > days_in_month(year, month):
-                day -= days_in_month(year, month)
-                carry, month = divmod_1(month + 1, 12)
+            # Now add or subtract the days. We can't just use divmod here,
+            # since the number of days/month varies with month. It's also
+            # where an asymmetry between addition and subtraction reveals
+            # itself: during subtraction, we need to decrement the month
+            # before determining how many days are in the "current" month,
+            # while addition needs to go in the other order.
+            day = op(day, int(other.days))
+            while day > days_in_month(year, month) or day < 1:
+                if day < 1:
+                    carry, month = divmod_1(month - 1, 12)
+                    day += days_in_month(year, month)
+                else:
+                    day -= days_in_month(year, month)
+                    carry, month = divmod_1(month + 1, 12)
                 year += carry
         else:
             return CalendarDate(year, month)
@@ -477,6 +492,13 @@ class Time(TimePoint):
             return super(Time, self).merge(other)
 
     def __add__(self, other):
+        return self.add_sub(other, add)
+
+    def __sub__(self, other):
+        return self.add_sub(other, sub)
+
+    def add_sub(self, other, op):
+        """Common subroutine for addition and subtraction."""
         if not isinstance(other, Duration):
             return NotImplemented
         elements = []
@@ -486,7 +508,7 @@ class Time(TimePoint):
                            (60, 60, 24)):
             assert isinstance(y, type(x)), "type mismatch"
             if x:
-                carry, z = divmod(x.decimal() + y.decimal() + carry, m)
+                carry, z = divmod(op(x.decimal(), y.decimal()) + carry, m)
             else:
                 carry, z = 0, None
             elements.append(z)
@@ -519,17 +541,23 @@ class DateTime(Date, Time):
             return super(DateTime, self).merge(other)
 
     def __add__(self, other):
+        return self.add_sub(other, add)
+
+    def __sub__(self, other):
+        return self.add_sub(other, sub)
+
+    def add_sub(self, other, op):
         if not isinstance(other, Duration):
             return NotImplemented
         if self.time:
             try:
-                time = self.time + other
+                time = op(self.time, other)
             except TimeUnitOverflow as overflow:
                 time = overflow.value
-                other += Days(overflow.carry)
+                other += Days(abs(overflow.carry))
         else:
             time = None
-        date = self.date + other
+        date = op(self.date, other)
         return DateTime(date, time)
 
     def __str__(self):

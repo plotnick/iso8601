@@ -643,6 +643,17 @@ class TestCalendarCalculations(TestCase):
         self.assertRaises(TimeUnitOverflow,
                           lambda: Time(23, 20, 50) + TimeDuration(0, 39, 10))
 
+    def test_time_minus_duration(self):
+        """Time minus duration"""
+        self.assertEqual(Time(23, 20) - TimeDuration(0, 5),
+                         Time(23, 15))
+        self.assertEqual(Time(23, 20) - TimeDuration(0, 5, 15),
+                         Time(23, 15))
+        self.assertEqual(Time(23, 20, 5) - TimeDuration(0, 5, 15),
+                         Time(23, 14, 50))
+        self.assertRaises(TimeUnitOverflow,
+                          lambda: Time(0, 1, 1) - TimeDuration(0, 1, 2))
+
     def test_calendar_date_plus_duration(self):
         """Calendar date plus duration"""
         self.assertEqual(Date(1984) + Duration(0),
@@ -666,11 +677,30 @@ class TestCalendarCalculations(TestCase):
         self.assertEqual(Date(1983, 12, 31) + Duration(0, 1, 30),
                          Date(1984, 3, 1))
 
+    def test_calendar_date_minus_duration(self):
+        """Calendar date minus duration"""
+        self.assertEqual(Date(1985) - Duration(1),
+                         Date(1984))
+        self.assertEqual(Date(1985) - Duration(1, 4),
+                         Date(1984))
+        self.assertEqual(Date(1984, 2, 29) - Duration(0, 1),
+                         Date(1984, 1, 29))
+        self.assertEqual(Date(1985, 5, 21) - Duration(1, 1, 1),
+                         Date(1984, 4, 20))
+        self.assertEqual(Date(1985, 5, 20) - Duration(1, 0, 30),
+                         Date(1984, 4, 20))
+
     def test_datetime_plus_duration(self):
         """Datetime plus duration"""
         self.assertEqual(DateTime(CalendarDate(1983, 1, 31), Time(23, 30)) +
                          Duration(1, 1, 3, 25, 31),
                          DateTime(CalendarDate(1984, 3, 5), Time(1, 1)))
+
+    def test_datetime_minus_duration(self):
+        """Datetime minus duration"""
+        self.assertEqual(DateTime(CalendarDate(1984, 3, 5), Time(1, 1)) -
+                         Duration(1, 1, 3, 25, 31),
+                         DateTime(CalendarDate(1983, 1, 31), Time(23, 30)))
 
 def suite():
     return TestSuite([TestLoader().loadTestsFromTestCase(cls) \
